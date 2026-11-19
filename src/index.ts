@@ -60,10 +60,18 @@ async function resolveViewer(req: Request, env: Env): Promise<Viewer> {
   if (env.DEMO_MODE === "true" && asId) {
     const u = await env.DB.prepare("SELECT id, role, display_name FROM users WHERE id = ? AND status = 'active'")
       .bind(asId).first<{ id: string; role: string; display_name: string }>();
-    if (u) return { id: u.id, role: u.role as Viewer["role"], name: u.display_name };
+    if (u) {
+      const table = u.role === "youth" ? "youth_profiles" : "adult_profiles";
+      const p = u.role === "staff" ? 1 : await env.DB.prepare(`SELECT 1 FROM ${table} WHERE user_id = ?`).bind(u.id).first();
+      return { id: u.id, role: u.role as Viewer["role"], name: u.display_name, onboarding: !p };
+    }
   }
-  return { id: null, role: "guest", name: "ゲスト" };
+  return { id: null, role: "guest", name: "ゲスト", onboarding: false };
 }
+
+// 立場と、プロフィール登録前（onboarding）かどうかで使えるツールを決める
+const allowed = (t: (typeof TOOLS)[number], v: Viewer) =>
+  t.roles.includes(v.role) && !(t.when === "onboarding" && !v.onboarding) && !(t.when === "ready" && v.onboarding);
 
 async function handle(msg: RpcRequest, viewer: Viewer, env: Env) {
   const { id, method, params } = msg;
@@ -80,7 +88,14 @@ async function handle(msg: RpcRequest, viewer: Viewer, env: Env) {
           `雪越市（架空）の若者チャレンジ支援サーバーです。いまの利用者: ${viewer.name}（${viewer.role}）。` +
           "このサーバーはデータを返すだけです。誰が合うか・どう後押しするかはあなた（AI）が判断してください。" +
           "まず whoami で利用者のプロフィールを確認し、find_* で候補を集めて比べます。連絡先は直接渡さず request_consultation でつなぎます。" +
-          CORE_PRINCIPLES,
+          CORE_PRINCIPLES +
+          (viewer.onboarding
+            ? (viewer.role === "youth"
+              ? "【この人は初めての利用者で、プロフィールはまだ空です】最初にあいさつし、このサービスで何ができるかを短く伝えてから、やってみたいことを聞いてください。" +
+                "ニックネーム・学年・地区・興味などは会話の中で少しずつ自然に聞き、一度に質問攻めにしないこと。必要な項目がそろったら本人に確認して setup_profile で登録してください。" +
+                "get_encouragement_guide(kind=flow) の『初めての人との会話』に沿って進めてください。"
+              : "【この大人は初めての利用者で、プロフィールはまだ空です】若者を応援する仕組みを短く説明し、経歴・得意なこと・応援したい理由・関わり方を会話で聞いて、確認のうえ setup_profile で登録してください。")
+            : ""),
       });
     case "prompts/list":
       return ok({ prompts: PROMPTS.filter((p) => viewer.role !== "youth" || p.name !== "adult_reply_helper").filter((p) => viewer.role !== "adult" || p.name !== "youth_supporter") });
@@ -90,12 +105,14 @@ async function handle(msg: RpcRequest, viewer: Viewer, env: Env) {
     case "ping":
       return ok({});
     case "tools/list":
-      return ok({ tools: TOOLS.filter((t) => t.roles.includes(viewer.role)).map(({ roles, ...t }) => t) });
+      return ok({ tools: TOOLS.filter((t) => allowed(t, viewer)).map(({ roles, when, ...t }) => t) });
     case "tools/call": {
       const tool = TOOLS.find((t) => t.name === params?.name);
       if (!tool) return err(-32602, `不明なツール: ${params?.name}`);
-      if (!tool.roles.includes(viewer.role))
-        return ok({ isError: true, content: [{ type: "text", text: `このツールは ${tool.roles.join("/")} 向けです（いまは ${viewer.role}）` }] });
+      if (!allowed(tool, viewer))
+        return ok({ isError: true, content: [{ type: "text", text: viewer.onboarding && tool.when === "ready"
+          ? "先に setup_profile でプロフィールを登録してください"
+          : `このツールはいまの利用者（${viewer.role}）では使えません` }] });
       try {
         const result = await callTool(tool.name, params?.arguments ?? {}, viewer, env);
         return ok({ content: [{ type: "text", text: JSON.stringify(result, null, 2) }] });

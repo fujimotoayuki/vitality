@@ -21,6 +21,8 @@ for (const y of load("youth")) {
   out.push(insert("users", { id, role: "youth", display_name }));
   out.push(insert("youth_profiles", { user_id: id, ...p }));
 }
+// 白紙アカウント（プロフィールなし＝初めて使う人）
+for (const u of load("blank_users")) out.push(insert("users", u));
 for (const t of ["resources", "grants", "cases", "encouragement", "vendors", "vendor_prices"]) for (const r of load(t)) out.push(insert(t, r));
 
 writeFileSync(new URL("../seed.sql", import.meta.url), out.join("\n") + "\n");

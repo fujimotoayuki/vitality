@@ -3,7 +3,7 @@
 // サーバー側に残すのは、条件での絞り込みと、安全のためのルール（保護者同意・窓口確認・連絡先を出さない）だけ。
 export interface Env { DB: D1Database; DEMO_MODE: string }
 export type Role = "youth" | "adult" | "staff" | "guest";
-export type Viewer = { id: string | null; role: Role; name: string };
+export type Viewer = { id: string | null; role: Role; name: string; onboarding: boolean }; // onboarding = プロフィール未登録
 
 const CATEGORIES = ["event", "startup", "volunteer", "art", "tech", "food"] as const;
 const GRADES = ["小", "中", "高", "大", "専門"];
@@ -39,14 +39,22 @@ const REGION = {
 async function whoami(viewer: Viewer, env: Env) {
   if (!viewer.id) return { role: "guest", note: "デモでは /mcp?as=<id> で利用者を選びます。list_demo_users で一覧、register_profile で新規登録" };
   const table = viewer.role === "youth" ? "youth_profiles" : "adult_profiles";
+  if (viewer.onboarding) return {
+    id: viewer.id, role: viewer.role, first_time: true, profile: null,
+    note: "初めての利用者です。プロフィールはまだ空です。会話の中で少しずつ聞き、本人に確認してから setup_profile で登録してください",
+    required: viewer.role === "youth" ? ["display_name（ニックネーム）", "grade", "district", "interests"] : ["display_name", "district", "kind", "occupation", "categories", "skills", "support_modes", "target_grades"],
+  };
   const p = await env.DB.prepare(`SELECT * FROM ${table} WHERE user_id = ?`).bind(viewer.id).first<any>();
-  return { id: viewer.id, role: viewer.role, name: viewer.name, profile: p ? expand(p) : null };
+  return { id: viewer.id, role: viewer.role, name: viewer.name, first_time: false, profile: p ? expand(p) : null };
 }
 
 async function listDemoUsers(env: Env) {
   const y = (await env.DB.prepare("SELECT u.id, u.display_name, y.school_year, y.current_idea FROM users u JOIN youth_profiles y ON y.user_id=u.id ORDER BY u.id").all()).results;
   const a = (await env.DB.prepare("SELECT u.id, u.display_name, p.occupation FROM users u JOIN adult_profiles p ON p.user_id=u.id ORDER BY u.id").all()).results;
-  return { how_to: "MCPのURLを /mcp?as=<id> にして接続し直す", youth: y, adults: a };
+  const blank = (await env.DB.prepare(
+    "SELECT u.id, u.role FROM users u WHERE u.role IN ('youth','adult') AND NOT EXISTS (SELECT 1 FROM youth_profiles WHERE user_id=u.id) AND NOT EXISTS (SELECT 1 FROM adult_profiles WHERE user_id=u.id) ORDER BY u.id"
+  ).all()).results;
+  return { how_to: "MCPのURLを /mcp?as=<id> にして接続し直す", first_time_accounts: blank, youth: y, adults: a };
 }
 
 // ---------- 大人 ----------
@@ -182,19 +190,37 @@ const YOUTH_FIELDS = ["grade", "school_year", "district", "interests", "can_do",
 const ADULT_FIELDS = ["kind", "age_range", "occupation", "district", "life_story", "why_support", "categories", "skills", "failures_to_share", "personality", "communication", "support_modes", "frequency", "available_times", "target_grades", "not_good_at"];
 const enc = (v: unknown) => (Array.isArray(v) || (v && typeof v === "object") ? JSON.stringify(v) : typeof v === "boolean" ? (v ? 1 : 0) : v);
 
-async function registerProfile(a: any, env: Env) {
-  need(a.role === "youth" || a.role === "adult", "role は youth か adult");
+// プロフィールの必須項目チェックと INSERT 文
+function profileInsert(role: "youth" | "adult", userId: string, a: any, env: Env) {
   need(a.display_name, "display_name（若者はニックネーム）が必要です");
   need(DISTRICTS.includes(a.district), `district は ${DISTRICTS.join("/")} のどれか`);
-  if (a.role === "youth") { need(GRADES.includes(a.grade), "grade は 小/中/高/大/専門"); need(a.interests, "interests が必要です"); }
+  if (role === "youth") { need(GRADES.includes(a.grade), "grade は 小/中/高/大/専門"); need(a.interests, "interests が必要です"); }
   else need(a.kind && a.occupation && a.categories && a.skills && a.support_modes && a.target_grades, "kind, occupation, categories, skills, support_modes, target_grades が必要です");
-  const id = (a.role === "youth" ? "y" : "a") + crypto.randomUUID().slice(0, 6);
-  const fields = a.role === "youth" ? YOUTH_FIELDS : ADULT_FIELDS;
-  const cols = fields.filter((f) => a[f] !== undefined);
-  const table = a.role === "youth" ? "youth_profiles" : "adult_profiles";
+  const cols = (role === "youth" ? YOUTH_FIELDS : ADULT_FIELDS).filter((f) => a[f] !== undefined);
+  const table = role === "youth" ? "youth_profiles" : "adult_profiles";
+  return env.DB.prepare(`INSERT INTO ${table} (user_id, ${cols.join(",")}) VALUES (?, ${cols.map(() => "?").join(",")})`).bind(userId, ...cols.map((c) => enc(a[c])));
+}
+
+// 白紙アカウント（プロフィール未登録）の初回登録
+async function setupProfile(a: any, viewer: Viewer, env: Env) {
+  need(viewer.onboarding, "すでにプロフィールがあります。変更は update_profile で");
+  const role = viewer.role as "youth" | "adult";
   await env.DB.batch([
-    env.DB.prepare("INSERT INTO users (id, role, display_name, status) VALUES (?,?,?,?)").bind(id, a.role, a.display_name, "active"),
-    env.DB.prepare(`INSERT INTO ${table} (user_id, ${cols.join(",")}) VALUES (?, ${cols.map(() => "?").join(",")})`).bind(id, ...cols.map((c) => enc(a[c]))),
+    profileInsert(role, viewer.id!, a, env),
+    env.DB.prepare("UPDATE users SET display_name = ? WHERE id = ?").bind(a.display_name, viewer.id),
+  ]);
+  return {
+    id: viewer.id, role, display_name: a.display_name,
+    note: role === "adult" ? "登録しました。窓口の確認（verified）が済むまで、若者からの相談は届きません" : "登録しました。これで大人への相談申し込みなど、すべての機能が使えます",
+  };
+}
+
+async function registerProfile(a: any, env: Env) {
+  need(a.role === "youth" || a.role === "adult", "role は youth か adult");
+  const id = (a.role === "youth" ? "y" : "a") + crypto.randomUUID().slice(0, 6);
+  await env.DB.batch([
+    env.DB.prepare("INSERT INTO users (id, role, display_name, status) VALUES (?,?,?,?)").bind(id, a.role, a.display_name ?? "", "active"),
+    profileInsert(a.role, id, a, env),
   ]);
   return {
     id, role: a.role,
@@ -224,19 +250,25 @@ const keys = strs("キーワードで絞る（どれかを含むもの）");
 const ALL: Role[] = ["youth", "adult", "staff", "guest"];
 const ADULT: Role[] = ["adult", "staff"];
 
-export const TOOLS: { name: string; description: string; inputSchema: any; roles: Role[] }[] = [
+const PROFILE_PROPS = {
+  grade: str("学年区分", GRADES), school_year: str("例: 高校2年"), interests: strs("興味"), can_do: strs("できること"), current_idea: str("やってみたいこと"), idea_category: str("活動の種類", CATEGORIES),
+  worries: strs("不安"), personality: strs("性格"), wants_from_adult: str("大人に求めること"), wants_peer: str("仲間に求めること"), available_times: strs("空いている時間"), mobility: str("移動手段"), guardian_consent: { type: "boolean" }, open_to_peers: { type: "boolean" },
+  kind: str("大人の種類", ["mentor", "professional", "provider"]), age_range: str("年代"), occupation: str("職業"), life_story: str("経歴"), why_support: str("応援する理由"),
+  categories: strs("得意な活動の種類"), skills: strs("得意なこと"), failures_to_share: str("話せる失敗談"), communication: str("関わり方のスタイル"),
+  support_modes: strs("chat/meet/onsite/review/introduce/lend"), frequency: str("頻度"), target_grades: strs("対象学年"), not_good_at: str("苦手なこと"),
+};
+
+// when: onboarding=プロフィール未登録の人だけ / ready=登録済みの人だけ
+export const TOOLS: { name: string; description: string; inputSchema: any; roles: Role[]; when?: "onboarding" | "ready" }[] = [
   { name: "whoami", roles: ALL, description: "いまの利用者（若者/大人）と、その人のプロフィール全項目を返す", inputSchema: S({}) },
   { name: "list_demo_users", roles: ALL, description: "【デモ用】切り替えられる利用者の一覧", inputSchema: S({}) },
   { name: "get_region", roles: ALL, description: "雪越市（架空）の地区・地域課題・活動の種類の一覧を返す", inputSchema: S({}) },
   { name: "register_profile", roles: ["guest", "staff"], description: "若者または大人として新規登録する。大人は窓口確認後に相談を受けられる", inputSchema: S({
     role: str("youth か adult", ["youth", "adult"]), display_name: str("若者はニックネーム、大人は名前"), district: str("地区", DISTRICTS),
-    grade: str("学年区分", GRADES), school_year: str("例: 高校2年"), interests: strs("興味"), can_do: strs("できること"), current_idea: str("やってみたいこと"), idea_category: str("活動の種類", CATEGORIES),
-    worries: strs("不安"), personality: strs("性格"), wants_from_adult: str("大人に求めること"), wants_peer: str("仲間に求めること"), available_times: strs("空いている時間"), mobility: str("移動手段"), guardian_consent: { type: "boolean" }, open_to_peers: { type: "boolean" },
-    kind: str("大人の種類", ["mentor", "professional", "provider"]), age_range: str("年代"), occupation: str("職業"), life_story: str("経歴"), why_support: str("応援する理由"),
-    categories: strs("得意な活動の種類"), skills: strs("得意なこと"), failures_to_share: str("話せる失敗談"), communication: str("関わり方のスタイル"),
-    support_modes: strs("chat/meet/onsite/review/introduce/lend"), frequency: str("頻度"), target_grades: strs("対象学年"), not_good_at: str("苦手なこと"),
+    ...PROFILE_PROPS,
   }, ["role", "display_name", "district"]) },
-  { name: "update_profile", roles: ["youth", "adult"], description: "自分のプロフィールを更新する（項目は register_profile と同じ）", inputSchema: { type: "object", additionalProperties: true } },
+  { name: "setup_profile", roles: ["youth", "adult"], when: "onboarding", description: "【初めての利用者だけ】会話で聞いた内容でプロフィールを初回登録する。登録前に本人に内容を確認すること。若者の必須: display_name（ニックネーム）, grade, district, interests", inputSchema: S({ display_name: str("若者はニックネーム（本名は聞かない）、大人は名前"), district: str("地区", DISTRICTS), ...PROFILE_PROPS }, ["display_name", "district"]) },
+  { name: "update_profile", roles: ["youth", "adult"], when: "ready", description: "自分のプロフィールを更新する（項目は register_profile と同じ）", inputSchema: { type: "object", additionalProperties: true } },
 
   { name: "find_adults", roles: ALL, description: "地域の大人（メンター・専門職・場所や機材の提供者）のプロフィールを返す。経歴・応援する理由・得意なこと・失敗談・性格・関わり方・空き時間・対象学年・苦手なことを含む。条件は省略可（省略で全員）", inputSchema: S({ kind: str("種類で絞る", ["mentor", "professional", "provider"]), category: cat, grade: str("対象学年に含むかで絞る", GRADES), district: dist, keywords: keys }) },
   { name: "find_peers", roles: ["youth", "staff"], description: "仲間検索に公開OKの若者のプロフィールを返す（興味・できること・やりたいこと・仲間に求めること等）", inputSchema: S({ grade, district: dist, category: cat, keywords: keys }) },
@@ -247,9 +279,9 @@ export const TOOLS: { name: string; description: string; inputSchema: any; roles
   { name: "get_encouragement_guide", roles: ALL, description: "【最重要】若者の背中の押し方ガイド。若者と話す前に必ず読む。守る原則・会話の流れ・学年ごとの話し方・段階ごとの関わり方・不安ごとの安心材料・OK/NGの声かけ例・AIだけで抱えない場面を返す。audience=adult で大人が返事を書くときの助言", inputSchema: S({ audience: str("誰と話すか（既定 youth）", ["youth", "adult"]), kind: str("種類で絞る", ["principle", "flow", "grade_tone", "stage", "worry", "safety", "adult"]), stage: str("段階", ["idea", "planning", "stuck", "just_before", "after"]), grade, worries: strs("若者の不安（該当する worry だけ返す）") }) },
   { name: "find_vendors", roles: ALL, description: "見積もり用に、架空の業者（印刷・イベント機材・バス・飲食・保険・資材）とその価格表を返す。同じ item_key で複数社を比べられ、学割・納期・最低注文数・強みも含む", inputSchema: S({ type: str("業種", ["印刷", "イベント機材", "バス・送迎", "飲食・ケータリング", "保険", "包装・資材"]), item_key: str("品目キー（例 flyer_a4_100, pa_set_day, bus_halfday, insurance_day）。一覧は item_keys に出る"), district: dist, keywords: keys }) },
 
-  { name: "request_consultation", roles: ["youth"], description: "大人に相談を申し込む（連絡先は窓口経由でつなぐ。未成年は保護者同意が必要）", inputSchema: S({ adult_id: str("大人のID"), message: str("相談したいこと") }, ["adult_id", "message"]) },
-  { name: "list_my_consultations", roles: ["youth", "adult"], description: "自分に関係する相談の一覧（大人は届いた相談、若者は申し込んだ相談）", inputSchema: S({}) },
-  { name: "respond_consultation", roles: ADULT, description: "届いた相談を受ける/断る", inputSchema: S({ id: str("相談ID"), accept: { type: "boolean" } }, ["id", "accept"]) },
+  { name: "request_consultation", roles: ["youth"], when: "ready", description: "大人に相談を申し込む（連絡先は窓口経由でつなぐ。未成年は保護者同意が必要）", inputSchema: S({ adult_id: str("大人のID"), message: str("相談したいこと") }, ["adult_id", "message"]) },
+  { name: "list_my_consultations", roles: ["youth", "adult"], when: "ready", description: "自分に関係する相談の一覧（大人は届いた相談、若者は申し込んだ相談）", inputSchema: S({}) },
+  { name: "respond_consultation", roles: ADULT, when: "ready", description: "届いた相談を受ける/断る", inputSchema: S({ id: str("相談ID"), accept: { type: "boolean" } }, ["id", "accept"]) },
 ];
 
 export async function callTool(name: string, a: any, viewer: Viewer, env: Env): Promise<unknown> {
@@ -258,6 +290,7 @@ export async function callTool(name: string, a: any, viewer: Viewer, env: Env): 
     case "list_demo_users": return listDemoUsers(env);
     case "get_region": return REGION;
     case "register_profile": return registerProfile(a, env);
+    case "setup_profile": return setupProfile(a, viewer, env);
     case "update_profile": return updateProfile(a, viewer, env);
     case "find_adults": return findAdults(a, env);
     case "find_peers": return findPeers(a, viewer, env);

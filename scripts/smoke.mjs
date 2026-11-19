@@ -63,5 +63,21 @@ check("register_profile", reg.data.id?.startsWith("y"), reg.data.id);
 const who = await call(reg.data.id, "whoami");
 check("登録した人で whoami", who.data.role === "youth" && who.data.profile?.interests?.[0] === "写真");
 
+// --- 白紙アカウント（初めて使う人） ---
+const bInit = await rpc("y901", "initialize", { protocolVersion: "2025-03-26", capabilities: {}, clientInfo: { name: "smoke", version: "0" } });
+check("初回の説明文", bInit.result.instructions.includes("初めての利用者"));
+const bt = (await rpc("y901", "tools/list")).result.tools.map((t) => t.name);
+check("初回は setup_profile が出て相談は出ない", bt.includes("setup_profile") && !bt.includes("request_consultation") && !bt.includes("update_profile"), bt.join(","));
+const bw = await call("y901", "whoami");
+check("初回の whoami は白紙", bw.data.first_time === true && bw.data.profile === null);
+check("登録前は相談できない", (await call("y901", "request_consultation", { adult_id: "a001", message: "x" })).isError);
+const firstFlow = await call("y901", "get_encouragement_guide", { kind: "flow" });
+check("初めての人との会話ガイド", firstFlow.data.guide.some((g) => g.title === "初めての人との会話"));
+const su = await call("y901", "setup_profile", { display_name: "ひかり", grade: "高", school_year: "高校1年", district: "honjo", interests: ["音楽"], current_idea: "商店街でライブ", idea_category: "event", guardian_consent: true });
+check("setup_profile", su.data.display_name === "ひかり", JSON.stringify(su.data).slice(0, 80));
+const at2 = (await rpc("y901", "tools/list")).result.tools.map((t) => t.name);
+check("登録後は通常のツールに切り替わる", at2.includes("request_consultation") && !at2.includes("setup_profile"));
+check("二重登録はできない", (await call("y901", "setup_profile", { display_name: "x", district: "honjo", grade: "高", interests: ["x"] })).isError);
+
 console.log(fail ? `\n${fail} 件 NG` : "\nすべて OK");
 process.exit(fail ? 1 : 0);
