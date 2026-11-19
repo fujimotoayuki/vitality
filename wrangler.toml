@@ -1,0 +1,13 @@
+name = "yukigoe-youth-mcp"
+main = "src/index.ts"
+compatibility_date = "2024-11-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "yukigoe"
+# デプロイ時に `wrangler d1 create yukigoe` で出たIDに置き換える（ローカルはこのままで動く）
+database_id = "00000000-0000-0000-0000-000000000000"
+
+[vars]
+# デモモード: ?as=<ユーザーID> で誰として使うか切り替える。本番はOAuthにして false にする
+DEMO_MODE = "true"

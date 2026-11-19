@@ -1,0 +1,23 @@
+[
+{"id":"v001","name":"雪越プリントセンター","type":"印刷","district":"shineki","description":"市内最大の印刷会社。大量印刷が得意","strengths":["大量だと安い","色がきれい"],"student_discount":"学生10%引き","lead_days":5,"min_order":"100枚から","contact_via":"窓口経由（架空）"},
+{"id":"v002","name":"本城まちの印刷屋 かみや","type":"印刷","district":"honjo","description":"商店街の老舗。少量・急ぎに強く、デザイン相談にも乗る","strengths":["少量OK","翌日仕上げ","デザイン相談無料"],"student_discount":"高校生以下は版代無料","lead_days":1,"min_order":"10枚から","contact_via":"店頭"},
+{"id":"v003","name":"ネット印刷ユキプリ","type":"印刷","district":"all","description":"ネット注文の格安印刷（県外工場）","strengths":["最安水準"],"student_discount":null,"lead_days":7,"min_order":"100枚から","contact_via":"Web注文"},
+
+{"id":"v010","name":"汐見イベントレンタル","type":"イベント機材","district":"shiomi","description":"テント・机椅子・音響の総合レンタル。設営スタッフ派遣も可","strengths":["品揃え","配送・設営あり"],"student_discount":"学生団体15%引き","lead_days":7,"min_order":null,"contact_via":"電話・メール"},
+{"id":"v011","name":"ゆきあかり音響サービス","type":"イベント機材","district":"honjo","description":"ライブハウス系列の音響専門。オペレーター付きで貸せる","strengths":["音響の質","オペレーター付き"],"student_discount":"高校生バンドは半額","lead_days":3,"min_order":null,"contact_via":"ライブハウス経由"},
+{"id":"v012","name":"雪越市 地域活動機材バンク","type":"イベント機材","district":"all","description":"市の共同機材。安いが数に限りあり、自分で運搬","strengths":["最安","市内団体向け"],"student_discount":"学生は無料の品目あり","lead_days":7,"min_order":null,"contact_via":"市民活動窓口"},
+
+{"id":"v020","name":"雪越観光バス","type":"バス・送迎","district":"shineki","description":"貸切バス・マイクロバス。冬道に慣れた運転手","strengths":["大人数","冬道に強い"],"student_discount":"教育目的で10%引き","lead_days":14,"min_order":null,"contact_via":"電話"},
+{"id":"v021","name":"山里ふれあい交通（NPO）","type":"バス・送迎","district":"yamasato","description":"中山間地の乗り合いワゴンとジャンボタクシー","strengths":["山里・浜里に強い","少人数OK"],"student_discount":null,"lead_days":1,"min_order":null,"contact_via":"前日までに電話"},
+{"id":"v022","name":"まちなかジャンボタクシー","type":"バス・送迎","district":"honjo","description":"9人乗りジャンボタクシー","strengths":["少人数","時間の融通"],"student_discount":null,"lead_days":2,"min_order":null,"contact_via":"電話"},
+
+{"id":"v030","name":"汐見仕出し 海幸","type":"飲食・ケータリング","district":"shiomi","description":"港町の仕出し屋。お弁当・おにぎり","strengths":["地元の魚","大人数対応"],"student_discount":null,"lead_days":3,"min_order":"10食から","contact_via":"電話"},
+{"id":"v031","name":"新駅前ベーカリー こむぎ","type":"飲食・ケータリング","district":"shineki","description":"パン・軽食・飲み物のケータリング","strengths":["軽食向き","アレルギー表示が丁寧"],"student_discount":"学生イベントは飲み物サービス","lead_days":2,"min_order":"5人分から","contact_via":"店頭・電話"},
+{"id":"v032","name":"山里農家レストラン 棚田","type":"飲食・ケータリング","district":"yamasato","description":"地元の米と野菜のおにぎり・汁物","strengths":["地産地消","体験イベントと相性"],"student_discount":null,"lead_days":5,"min_order":"10食から","contact_via":"電話"},
+
+{"id":"v040","name":"雪越あんしん保険代理店","type":"保険","district":"honjo","description":"市民活動・イベント保険の取扱い","strengths":["説明が丁寧","当日加入相談可"],"student_discount":null,"lead_days":3,"min_order":null,"contact_via":"窓口"},
+{"id":"v041","name":"ネット保険 イベントガード","type":"保険","district":"all","description":"Webで1日単位で加入できるイベント保険","strengths":["Webで完結","最安水準"],"student_discount":null,"lead_days":1,"min_order":null,"contact_via":"Web"},
+
+{"id":"v050","name":"包装資材の店 つつみや","type":"包装・資材","district":"honjo","description":"お菓子の袋・シール・箱","strengths":["少量OK","相談しやすい"],"student_discount":null,"lead_days":0,"min_order":null,"contact_via":"店頭"},
+{"id":"v051","name":"ホームセンター 雪越店","type":"包装・資材","district":"shineki","description":"資材・工作材料・清掃用品","strengths":["何でもある","その場で買える"],"student_discount":null,"lead_days":0,"min_order":null,"contact_via":"店頭"}
+]

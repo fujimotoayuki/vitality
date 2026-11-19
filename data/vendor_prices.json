@@ -1,0 +1,44 @@
+[
+{"id":"vp001","vendor_id":"v001","item_key":"flyer_a4_100","item":"チラシ A4カラー片面","unit":"100枚","price":1800,"note":"500枚なら4,500円"},
+{"id":"vp002","vendor_id":"v002","item_key":"flyer_a4_100","item":"チラシ A4カラー片面","unit":"100枚","price":3000,"note":"10枚から。翌日仕上げ"},
+{"id":"vp003","vendor_id":"v003","item_key":"flyer_a4_100","item":"チラシ A4カラー片面","unit":"100枚","price":900,"note":"送料込み・7日"},
+{"id":"vp004","vendor_id":"v001","item_key":"poster_a2","item":"ポスター A2","unit":"1枚","price":800,"note":null},
+{"id":"vp005","vendor_id":"v002","item_key":"poster_a2","item":"ポスター A2","unit":"1枚","price":1200,"note":"1枚から即日"},
+{"id":"vp006","vendor_id":"v003","item_key":"poster_a2","item":"ポスター A2","unit":"1枚","price":600,"note":"5枚から"},
+{"id":"vp007","vendor_id":"v001","item_key":"booklet_500","item":"マップ・冊子 A3二つ折り","unit":"500部","price":28000,"note":null},
+{"id":"vp008","vendor_id":"v002","item_key":"booklet_500","item":"マップ・冊子 A3二つ折り","unit":"500部","price":40000,"note":"デザイン相談込み"},
+{"id":"vp009","vendor_id":"v003","item_key":"booklet_500","item":"マップ・冊子 A3二つ折り","unit":"500部","price":19000,"note":null},
+
+{"id":"vp020","vendor_id":"v010","item_key":"tent_day","item":"テント 3m×3m","unit":"1張/日","price":3000,"note":"設営込み。配送料別 2,000円"},
+{"id":"vp021","vendor_id":"v012","item_key":"tent_day","item":"テント 3m×3m","unit":"1張/日","price":500,"note":"自分で運搬・設営"},
+{"id":"vp022","vendor_id":"v010","item_key":"table_chair_day","item":"長机1台＋椅子2脚","unit":"1セット/日","price":800,"note":null},
+{"id":"vp023","vendor_id":"v012","item_key":"table_chair_day","item":"長机1台＋椅子2脚","unit":"1セット/日","price":0,"note":"学生は無料"},
+{"id":"vp024","vendor_id":"v010","item_key":"pa_set_day","item":"音響セット（スピーカー・マイク2・ミキサー）","unit":"1日","price":8000,"note":null},
+{"id":"vp025","vendor_id":"v011","item_key":"pa_set_day","item":"音響セット（スピーカー・マイク2・ミキサー）","unit":"1日","price":6000,"note":"オペレーター付きは+10,000円。高校生バンドは半額"},
+{"id":"vp026","vendor_id":"v012","item_key":"pa_set_day","item":"音響セット（簡易）","unit":"1日","price":1000,"note":"30分講習が必要"},
+{"id":"vp027","vendor_id":"v010","item_key":"projector_day","item":"プロジェクター＋スクリーン","unit":"1日","price":5000,"note":null},
+{"id":"vp028","vendor_id":"v012","item_key":"projector_day","item":"プロジェクター＋スクリーン","unit":"1日","price":0,"note":null},
+{"id":"vp029","vendor_id":"v010","item_key":"heater_day","item":"屋外用ジェットヒーター","unit":"1台/日","price":4000,"note":"冬のイベント向け"},
+
+{"id":"vp040","vendor_id":"v020","item_key":"bus_halfday","item":"マイクロバス（25人・運転手付き）","unit":"半日","price":35000,"note":"教育目的10%引き"},
+{"id":"vp041","vendor_id":"v021","item_key":"bus_halfday","item":"ジャンボタクシー×2台（18人）","unit":"半日","price":24000,"note":"山里・浜里発着のみ"},
+{"id":"vp042","vendor_id":"v022","item_key":"bus_halfday","item":"ジャンボタクシー（9人）","unit":"半日","price":15000,"note":null},
+{"id":"vp043","vendor_id":"v021","item_key":"ride_oneway","item":"乗り合いワゴン","unit":"1人/片道","price":300,"note":"前日予約"},
+
+{"id":"vp060","vendor_id":"v030","item_key":"lunch_person","item":"お弁当","unit":"1人","price":700,"note":"おにぎりセットは400円"},
+{"id":"vp061","vendor_id":"v031","item_key":"lunch_person","item":"パン軽食セット","unit":"1人","price":450,"note":"飲み物付き"},
+{"id":"vp062","vendor_id":"v032","item_key":"lunch_person","item":"おにぎり2個＋豚汁","unit":"1人","price":500,"note":"体験イベント向け"},
+{"id":"vp063","vendor_id":"v031","item_key":"drink_person","item":"飲み物（ペットボトル）","unit":"1人","price":120,"note":"学生イベントは無料サービスあり"},
+{"id":"vp064","vendor_id":"v051","item_key":"drink_person","item":"飲み物（2Lペット＋紙コップ）","unit":"1人","price":40,"note":"自分で用意"},
+
+{"id":"vp080","vendor_id":"v040","item_key":"insurance_day","item":"1日イベント保険","unit":"1人/日","price":50,"note":"20人から。相談しながら加入"},
+{"id":"vp081","vendor_id":"v041","item_key":"insurance_day","item":"1日イベント保険","unit":"1人/日","price":30,"note":"Webで完結。最低1,000円"},
+{"id":"vp082","vendor_id":"v040","item_key":"insurance_volunteer_year","item":"ボランティア活動保険","unit":"1人/年","price":350,"note":null},
+
+{"id":"vp090","vendor_id":"v050","item_key":"packaging_100","item":"お菓子袋＋シール","unit":"100個分","price":2200,"note":"柄を選べる"},
+{"id":"vp091","vendor_id":"v051","item_key":"packaging_100","item":"お菓子袋＋シール","unit":"100個分","price":1500,"note":"無地"},
+{"id":"vp092","vendor_id":"v051","item_key":"cleanup_10","item":"軍手・ゴミ袋・トング","unit":"10人分","price":1200,"note":null},
+{"id":"vp093","vendor_id":"v051","item_key":"name_tag_set","item":"名札・受付用品","unit":"一式","price":800,"note":null},
+{"id":"vp094","vendor_id":"v051","item_key":"robot_kit_person","item":"工作材料（モーター・電池・板）","unit":"1人","price":900,"note":"簡易ロボット1台分"},
+{"id":"vp095","vendor_id":"v051","item_key":"sled_set","item":"そり・雪遊び道具","unit":"1セット","price":1800,"note":null}
+]

@@ -1,0 +1,10 @@
+[
+{"id":"g001","name":"雪越わかもの挑戦応援金","provider":"雪越市","max_amount":50000,"target_grades":["中","高","大","専門"],"categories":["event","volunteer","art","food","tech","startup"],"deadline":"毎月末","conditions":"活動後に写真付き報告","tags":["初めて","小規模"]},
+{"id":"g002","name":"まちなかにぎわい創出補助","provider":"本城商店街連合会","max_amount":200000,"target_grades":["高","大","専門"],"categories":["event","food","startup"],"deadline":"2027-01-31","conditions":"本城・汐見の商店街で実施","tags":["商店街","空き店舗"]},
+{"id":"g003","name":"こども・ユース地域活動助成","provider":"雪越地域財団","max_amount":100000,"target_grades":["小","中","高"],"categories":["volunteer","food","art"],"deadline":"2027-02-28","conditions":"大人のサポーター1名以上","tags":["子ども"]},
+{"id":"g004","name":"学生起業スタート支援","provider":"雪越信用金庫","max_amount":300000,"target_grades":["大","専門"],"categories":["startup","tech"],"deadline":"2027-03-15","conditions":"事業計画書と面談","tags":["起業"]},
+{"id":"g005","name":"中山間地域 交流活性化補助","provider":"雪越市","max_amount":150000,"target_grades":["高","大","専門"],"categories":["food","event","volunteer"],"deadline":"2027-04-30","conditions":"山里・浜里地区で実施","tags":["中山間","交流"]},
+{"id":"g006","name":"冬のまちあそび応援金","provider":"雪越観光協会","max_amount":80000,"target_grades":["中","高","大","専門"],"categories":["event","art"],"deadline":"2026-12-20","conditions":"12〜2月に実施","tags":["冬","雪","観光"]},
+{"id":"g007","name":"ものづくり次世代育成助成","provider":"汐見工業会","max_amount":100000,"target_grades":["中","高","大","専門"],"categories":["tech"],"deadline":"2027-01-15","conditions":"子ども向け教室など地域還元","tags":["ものづくり","理科"]},
+{"id":"g008","name":"地元発信クリエイター支援","provider":"雪越市","max_amount":120000,"target_grades":["高","大","専門"],"categories":["art","tech"],"deadline":"2027-02-15","conditions":"雪越の魅力を発信する作品","tags":["動画","デザイン","発信"]}
+]

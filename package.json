@@ -1,0 +1,17 @@
+{
+  "name": "yukigoe-youth-mcp",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "seed:build": "node scripts/build-seed.mjs",
+    "db:local": "node scripts/build-seed.mjs && node scripts/wr.mjs d1 execute yukigoe --local --file=schema.sql && node scripts/wr.mjs d1 execute yukigoe --local --file=seed.sql",
+    "dev": "node scripts/wr.mjs dev",
+    "test": "node scripts/smoke.mjs",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261119.1",
+    "typescript": "^5.6.3",
+    "wrangler": "^4.165.0"
+  }
+}
