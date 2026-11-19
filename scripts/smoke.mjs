@@ -79,5 +79,17 @@ const at2 = (await rpc("y901", "tools/list")).result.tools.map((t) => t.name);
 check("登録後は通常のツールに切り替わる", at2.includes("request_consultation") && !at2.includes("setup_profile"));
 check("二重登録はできない", (await call("y901", "setup_profile", { display_name: "x", district: "honjo", grade: "高", interests: ["x"] })).isError);
 
+// --- 記録 ---
+check("サーバー名 vitality", bInit.result.serverInfo.name === "vitality");
+check("登録前は記録できない", (await call("y902", "add_log", { content: "x" })).isError);
+const l1 = await call("y901", "add_log", { content: "商店街の喫茶店に会場のことを聞いた", date: "2026-11-19", kind: "progress" });
+const l2 = await call("y901", "add_log", { content: "ちょっと不安だけど楽しみ", kind: "feeling" });
+check("add_log", l1.data.date === "2026-11-19" && /^\d{4}-\d{2}-\d{2}$/.test(l2.data.date), l2.data.date);
+const ll = await call("y901", "list_logs", { from: "2026-11-19", to: "2026-11-19" });
+check("list_logs 日付で絞る", ll.data.count === 1 && ll.data.logs[0].kind === "progress");
+check("他人の記録は見えない", (await call("y001", "list_logs")).data.logs.every((x) => x.id !== l1.data.id));
+check("他人の記録は消せない", (await call("y001", "delete_log", { id: l1.data.id })).isError);
+check("delete_log", (await call("y901", "delete_log", { id: l1.data.id })).data.deleted === l1.data.id);
+
 console.log(fail ? `\n${fail} 件 NG` : "\nすべて OK");
 process.exit(fail ? 1 : 0);

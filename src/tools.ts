@@ -147,6 +147,40 @@ async function findVendors(a: any, env: Env) {
   return { count: list.length, vendors: list, item_keys: itemKeys, note: "すべて架空の会社。価格は税込の目安。学割・納期（lead_days）・最低注文数も見て比べる" };
 }
 
+// ---------- 記録（本人が「記録して」と言ったことだけ。本人しか見られない） ----------
+const LOG_KINDS = ["idea", "progress", "feeling", "learned", "plan", "note"] as const;
+const today = () => new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10); // 日本時間
+
+async function addLog(a: any, viewer: Viewer, env: Env) {
+  need(typeof a.content === "string" && a.content.trim(), "content（記録する内容）が必要です");
+  const date = a.date ?? today();
+  need(/^\d{4}-\d{2}-\d{2}$/.test(date), "date は YYYY-MM-DD");
+  const kind = a.kind ?? "note";
+  need(LOG_KINDS.includes(kind), `kind は ${LOG_KINDS.join("/")}`);
+  const id = "l" + crypto.randomUUID().slice(0, 8);
+  await env.DB.prepare("INSERT INTO activity_logs (id, user_id, log_date, kind, content, tags) VALUES (?,?,?,?,?,?)")
+    .bind(id, viewer.id, date, kind, a.content.trim(), JSON.stringify(kw(a.tags))).run();
+  return { id, date, kind, saved: a.content.trim() };
+}
+
+async function listLogs(a: any, viewer: Viewer, env: Env) {
+  let sql = "SELECT id, log_date AS date, kind, content, tags, created_at FROM activity_logs WHERE user_id = ?"; const b: unknown[] = [viewer.id];
+  if (a.from) { sql += " AND log_date >= ?"; b.push(a.from); }
+  if (a.to) { sql += " AND log_date <= ?"; b.push(a.to); }
+  if (a.kind) { sql += " AND kind = ?"; b.push(a.kind); }
+  let rows = (await env.DB.prepare(sql + " ORDER BY log_date, created_at").bind(...b).all<any>()).results.map(expand);
+  const keys = kw(a.keywords);
+  if (keys.length) rows = rows.filter((r) => anyIn(textOf(r.content, r.tags), keys));
+  return { count: rows.length, today: today(), logs: rows };
+}
+
+async function deleteLog(a: any, viewer: Viewer, env: Env) {
+  need(a.id, "id が必要です");
+  const r = await env.DB.prepare("DELETE FROM activity_logs WHERE id = ? AND user_id = ?").bind(a.id, viewer.id).run();
+  need(r.meta.changes, "その記録は見つかりません");
+  return { deleted: a.id };
+}
+
 // ---------- 相談（安全のためのルールはサーバーで守る） ----------
 async function youthProfile(env: Env, id: string | null) {
   if (!id) return null;
@@ -279,6 +313,10 @@ export const TOOLS: { name: string; description: string; inputSchema: any; roles
   { name: "get_encouragement_guide", roles: ALL, description: "【最重要】若者の背中の押し方ガイド。若者と話す前に必ず読む。守る原則・会話の流れ・学年ごとの話し方・段階ごとの関わり方・不安ごとの安心材料・OK/NGの声かけ例・AIだけで抱えない場面を返す。audience=adult で大人が返事を書くときの助言", inputSchema: S({ audience: str("誰と話すか（既定 youth）", ["youth", "adult"]), kind: str("種類で絞る", ["principle", "flow", "grade_tone", "stage", "worry", "safety", "adult"]), stage: str("段階", ["idea", "planning", "stuck", "just_before", "after"]), grade, worries: strs("若者の不安（該当する worry だけ返す）") }) },
   { name: "find_vendors", roles: ALL, description: "見積もり用に、架空の業者（印刷・イベント機材・バス・飲食・保険・資材）とその価格表を返す。同じ item_key で複数社を比べられ、学割・納期・最低注文数・強みも含む", inputSchema: S({ type: str("業種", ["印刷", "イベント機材", "バス・送迎", "飲食・ケータリング", "保険", "包装・資材"]), item_key: str("品目キー（例 flyer_a4_100, pa_set_day, bus_halfday, insurance_day）。一覧は item_keys に出る"), district: dist, keywords: keys }) },
 
+  { name: "add_log", roles: ["youth", "adult"], when: "ready", description: "本人が『記録して』『メモして』と頼んだときだけ、その内容を記録する（勝手に記録しない）。振り返り・成長記録に使う。記録は本人しか見られない", inputSchema: S({ content: str("記録する内容（本人の言葉をなるべくそのまま）"), date: str("出来事の日付 YYYY-MM-DD（『昨日』なら前日の日付。省略で今日）"), kind: str("種類: idea=アイデア, progress=進んだこと, feeling=気持ち, learned=学んだこと, plan=予定, note=その他", LOG_KINDS), tags: strs("タグ") }, ["content"]) },
+  { name: "list_logs", roles: ["youth", "adult"], when: "ready", description: "自分の記録を日付順に返す。『昨日何したっけ』『先週の振り返り』などに使う", inputSchema: S({ from: str("開始日 YYYY-MM-DD"), to: str("終了日 YYYY-MM-DD"), kind: str("種類", LOG_KINDS), keywords: keys }) },
+  { name: "delete_log", roles: ["youth", "adult"], when: "ready", description: "本人が消したいと言った記録を削除する", inputSchema: S({ id: str("記録ID") }, ["id"]) },
+
   { name: "request_consultation", roles: ["youth"], when: "ready", description: "大人に相談を申し込む（連絡先は窓口経由でつなぐ。未成年は保護者同意が必要）", inputSchema: S({ adult_id: str("大人のID"), message: str("相談したいこと") }, ["adult_id", "message"]) },
   { name: "list_my_consultations", roles: ["youth", "adult"], when: "ready", description: "自分に関係する相談の一覧（大人は届いた相談、若者は申し込んだ相談）", inputSchema: S({}) },
   { name: "respond_consultation", roles: ADULT, when: "ready", description: "届いた相談を受ける/断る", inputSchema: S({ id: str("相談ID"), accept: { type: "boolean" } }, ["id", "accept"]) },
@@ -299,6 +337,9 @@ export async function callTool(name: string, a: any, viewer: Viewer, env: Env): 
     case "find_cases": return findCases(a, env);
     case "get_encouragement_guide": return getEncouragementGuide(a, env);
     case "find_vendors": return findVendors(a, env);
+    case "add_log": return addLog(a, viewer, env);
+    case "list_logs": return listLogs(a, viewer, env);
+    case "delete_log": return deleteLog(a, viewer, env);
     case "request_consultation": return requestConsultation(a, viewer, env);
     case "list_my_consultations": return listMyConsultations(viewer, env);
     case "respond_consultation": return respondConsultation(a, viewer, env);

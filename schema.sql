@@ -1,6 +1,7 @@
 -- 雪越市 若者チャレンジ支援 D1 スキーマ
 -- 配列・複数値は JSON 文字列で保存（D1/SQLite の json_each で検索可能）
 
+DROP TABLE IF EXISTS activity_logs;
 DROP TABLE IF EXISTS consultations;
 DROP TABLE IF EXISTS encouragement;
 DROP TABLE IF EXISTS cost_items;
@@ -159,6 +160,18 @@ CREATE TABLE vendor_prices (
   note       TEXT
 );
 CREATE INDEX idx_price_item ON vendor_prices(item_key);
+
+-- 本人が「記録したい」と言ったことの記録（振り返り・成長記録。本人しか見られない）
+CREATE TABLE IF NOT EXISTS activity_logs (
+  id          TEXT PRIMARY KEY,
+  user_id     TEXT NOT NULL REFERENCES users(id),
+  log_date    TEXT NOT NULL,             -- 出来事の日付 YYYY-MM-DD（省略時は今日）
+  kind        TEXT NOT NULL DEFAULT 'note' CHECK (kind IN ('idea','progress','feeling','learned','plan','note')),
+  content     TEXT NOT NULL,
+  tags        TEXT,                      -- JSON
+  created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_logs_user ON activity_logs(user_id, log_date);
 
 CREATE INDEX idx_adult_district ON adult_profiles(district);
 CREATE INDEX idx_youth_district ON youth_profiles(district);

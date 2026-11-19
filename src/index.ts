@@ -40,7 +40,7 @@ async function buildPrompt(name: string, args: Record<string, string>, env: Env)
 }
 
 const PROTOCOL_VERSION = "2025-03-26";
-const SERVER_INFO = { name: "yukigoe-youth-challenge", version: "0.1.0" };
+const SERVER_INFO = { name: "vitality", title: "vitality", version: "0.2.0" };
 
 type RpcRequest = { jsonrpc: "2.0"; id?: string | number | null; method: string; params?: any };
 
@@ -85,10 +85,11 @@ async function handle(msg: RpcRequest, viewer: Viewer, env: Env) {
         capabilities: { tools: {}, prompts: {} },
         serverInfo: SERVER_INFO,
         instructions:
-          `雪越市（架空）の若者チャレンジ支援サーバーです。いまの利用者: ${viewer.name}（${viewer.role}）。` +
+          `vitality：雪越市（架空）の若者チャレンジ支援サーバーです。いまの利用者: ${viewer.name}（${viewer.role}）。` +
           "このサーバーはデータを返すだけです。誰が合うか・どう後押しするかはあなた（AI）が判断してください。" +
           "まず whoami で利用者のプロフィールを確認し、find_* で候補を集めて比べます。連絡先は直接渡さず request_consultation でつなぎます。" +
           CORE_PRINCIPLES +
+          "利用者が「記録して」「メモして」と言ったときだけ add_log で記録し、振り返りを頼まれたら list_logs を使ってください（勝手に記録しないこと）。" +
           (viewer.onboarding
             ? (viewer.role === "youth"
               ? "【この人は初めての利用者で、プロフィールはまだ空です】最初にあいさつし、このサービスで何ができるかを短く伝えてから、やってみたいことを聞いてください。" +
