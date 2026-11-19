@@ -5,8 +5,8 @@ compatibility_date = "2024-11-01"
 [[d1_databases]]
 binding = "DB"
 database_name = "yukigoe"
-# デプロイ時に `wrangler d1 create yukigoe` で出たIDに置き換える（ローカルはこのままで動く）
-database_id = "00000000-0000-0000-0000-000000000000"
+# 本番D1（wrangler d1 create yukigoe で作成）
+database_id = "718b717e-1004-4906-a2f5-a5670fff033a"
 
 [vars]
 # デモモード: ?as=<ユーザーID> で誰として使うか切り替える。本番はOAuthにして false にする
